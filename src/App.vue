@@ -2,13 +2,9 @@
 </script>
 
 <template>
-  <header>
-
-  </header>
+  <header />
   <main>
     <router-view />
   </main>
-  <footer>
-    
-  </footer>
+  <footer />
 </template>
