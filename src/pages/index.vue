@@ -1,10 +1,88 @@
 <script setup>
+import useFetch from '@/composables/useFetch'
+import { useVirtualList, useInfiniteScroll } from '@vueuse/core'
+import { onMounted, ref } from 'vue'
+
+const API_URI = import.meta.env.VITE_API_URI
+const USER_NAME = 'connectshark'
+
+const { doFetch, loading, data } = useFetch(`${ API_URI }/users/${ USER_NAME }/repos`)
+
+const realData = ref([])
+
+const { list, containerProps, wrapperProps } = useVirtualList(
+  realData,
+  {
+    itemHeight: 106
+  }
+)
+
+const options = {
+  per_page: 30,
+  page: 1
+}
+
+const canLoadMore = ref(false)
+
+onMounted(async () => {
+  await doFetch({ per_page: options.per_page, page: options.page })
+  realData.value.push(...data.value)
+  options.page = 4
+  options.per_page = 10
+  canLoadMore.value = true
+})
+
+useInfiniteScroll(
+  containerProps.ref,
+  async () => {
+    await doFetch({ per_page: options.per_page, page: options.page })
+    realData.value.push(...data.value)
+    options.page++
+    if (data.value.length < 10) {
+      canLoadMore.value = false
+    }
+  },
+  {
+    distance: 10,
+    canLoadMore: () => canLoadMore.value
+  }
+)
+
 </script>
 
 <template>
-  <section>
-    <h1 class=" text-3xl/loose text-center">
-      Hi
-    </h1>
+  <section
+    v-bind="containerProps"
+    class="h-screen pt-2"
+  >
+    <div class="w-11/12 max-w-lg mx-auto">
+      <ul
+        v-bind="wrapperProps"
+      >
+        <li
+          v-for="item in list"
+          :key="item.data.id"
+          class="mb-6 font-bold p-3 rounded-xl bg-white border border-gray-200 shadow hover:shadow-lg"
+        >
+          <div class="text-lg font-bold line-clamp-1">
+            <i class="bxl bx-github align-middle mr-1" /><span>{{ item.data.name }}</span>
+          </div>
+          <p class="line-clamp-1 text-sm text-gray-500">
+            {{ item.data.description || 'No description provided.' }}
+          </p>
+          <div class="flex items-center justify-between">
+            <p class="leading-loose">
+              Row Index: {{ item.index + 1 }}  
+            </p>
+            <a
+              :href="item.data.html_url"
+              target="_blank"
+              rel="noopener noreferrer"
+              class="hover:text-sky-600 hover:underline"
+            >link<i class="bx bx-arrow-out-up-right-square text-lg align-middle" /></a> 
+          </div>
+        </li>
+      </ul>
+    </div>
   </section>
 </template>
