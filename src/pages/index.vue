@@ -10,15 +10,19 @@ const { doFetch, loading, error, data } = useFetch(`${ API_URI }/users/${ USER_N
 
 const realData = ref([])
 
+const ITEM_HEIGHT = 130
+const INITIAL_PAGE_SIZE = 30
+const SUBSEQUENT_PAGE_SIZE = 10
+
 const { list, containerProps, wrapperProps } = useVirtualList(
   realData,
   {
-    itemHeight: 130
+    itemHeight: ITEM_HEIGHT
   }
 )
 
 const options = {
-  per_page: 30,
+  per_page: INITIAL_PAGE_SIZE,
   page: 1
 }
 
@@ -28,8 +32,8 @@ onMounted(async () => {
   await doFetch({ per_page: options.per_page, page: options.page })
   if (error.value) return
   realData.value.push(...data.value)
-  options.page = 4
-  options.per_page = 10
+  options.page = Math.floor(realData.value.length / SUBSEQUENT_PAGE_SIZE) + 1
+  options.per_page = SUBSEQUENT_PAGE_SIZE
   canLoadMore.value = true
 })
 
@@ -91,7 +95,7 @@ useInfiniteScroll(
         class="py-20"
       >
         <p class="text-center">
-          Somethings Wrong.
+          Something's Wrong.
         </p>
       </div>
     </div>
