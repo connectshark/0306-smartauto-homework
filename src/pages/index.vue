@@ -6,14 +6,14 @@ import { onMounted, ref } from 'vue'
 const API_URI = import.meta.env.VITE_API_URI
 const USER_NAME = 'connectshark'
 
-const { doFetch, loading, data } = useFetch(`${ API_URI }/users/${ USER_NAME }/repos`)
+const { doFetch, loading, error, data } = useFetch(`${ API_URI }/users/${ USER_NAME }/repos`)
 
 const realData = ref([])
 
 const { list, containerProps, wrapperProps } = useVirtualList(
   realData,
   {
-    itemHeight: 106
+    itemHeight: 130
   }
 )
 
@@ -26,6 +26,7 @@ const canLoadMore = ref(false)
 
 onMounted(async () => {
   await doFetch({ per_page: options.per_page, page: options.page })
+  if (error.value) return
   realData.value.push(...data.value)
   options.page = 4
   options.per_page = 10
@@ -36,6 +37,7 @@ useInfiniteScroll(
   containerProps.ref,
   async () => {
     await doFetch({ per_page: options.per_page, page: options.page })
+    if (error.value) return
     realData.value.push(...data.value)
     options.page++
     if (data.value.length < 10) {
@@ -58,11 +60,12 @@ useInfiniteScroll(
     <div class="w-11/12 max-w-lg mx-auto">
       <ul
         v-bind="wrapperProps"
+        class="py-5"
       >
         <li
           v-for="item in list"
           :key="item.data.id"
-          class="mb-6 font-bold p-3 rounded-xl bg-white border border-gray-200 shadow hover:shadow-lg"
+          class="not-last:mb-6 font-bold p-3 rounded-xl bg-white border border-gray-200 shadow hover:shadow-lg"
         >
           <div class="text-lg font-bold line-clamp-1">
             <i class="bxl bx-github align-middle mr-1" /><span>{{ item.data.name }}</span>
@@ -83,6 +86,14 @@ useInfiniteScroll(
           </div>
         </li>
       </ul>
+      <div
+        v-if="error"
+        class="py-20"
+      >
+        <p class="text-center">
+          Somethings Wrong.
+        </p>
+      </div>
     </div>
   </section>
 </template>
